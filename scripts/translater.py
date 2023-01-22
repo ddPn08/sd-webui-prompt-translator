@@ -49,6 +49,7 @@ class TranslateScript(scripts.Script):
 
     def ui(self, is_img2img):
         ctrls = []
+
         with gr.Group():
             with gr.Accordion("Translator", open=False):
                 auto = gr.Checkbox(label="Auto Translation", value=False)
@@ -81,16 +82,36 @@ class TranslateScript(scripts.Script):
                     show_label=False,
                     lines=2,
                 )
-                button = gr.Button("Translate", variant="primary")
 
-                button.click(
-                    fn=lambda app, *x: (
+                with gr.Row():
+                    translate = gr.Button("Translate", variant="primary")
+                    prompt = gr.Button("Send to Prompt", variant="secondary")
+                    neg_prompt = gr.Button(
+                        "Send to Negative Prompt", variant="secondary"
+                    )
+
+                    ctrls.extend((text, out, translate))
+
+                    fn = lambda app, *x: (
                         translateGoogle if app == "Google" else translateDeepL
-                    )(*x),
-                    inputs=[app, text, source, target],
-                    outputs=[out],
-                )
-                ctrls.extend((text, out, button))
+                    )(*x)
+
+                    tab_name = "img2img" if is_img2img else "txt2img"
+                    prompt.click(
+                        fn=None,
+                        _js=f"(text) => translatorSendToTextBox('{tab_name}', false, text)",
+                        inputs=[out],
+                    )
+                    neg_prompt.click(
+                        fn=None,
+                        _js=f"(text) => translatorSendToTextBox('{tab_name}', true, text)",
+                        inputs=[out],
+                    )
+                    translate.click(
+                        fn=fn,
+                        inputs=[app, text, source, target],
+                        outputs=[out],
+                    )
 
             gr.HTML("<br>")
 
